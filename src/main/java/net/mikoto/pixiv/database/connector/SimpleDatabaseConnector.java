@@ -3,6 +3,7 @@ package net.mikoto.pixiv.database.connector;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import net.mikoto.pixiv.api.http.database.artwork.GetArtwork;
+import net.mikoto.pixiv.api.http.database.artwork.GetArtworks;
 import net.mikoto.pixiv.api.http.database.artwork.InsertArtworks;
 import net.mikoto.pixiv.api.model.Artwork;
 import net.mikoto.pixiv.database.connector.exception.GetArtworkException;
@@ -21,10 +22,8 @@ import java.util.Base64;
 import java.util.Objects;
 
 import static net.mikoto.pixiv.api.http.database.artwork.GetArtwork.PARAM_ARTWORK_ID;
+import static net.mikoto.pixiv.api.http.database.artwork.GetArtworks.*;
 import static net.mikoto.pixiv.api.util.HttpApiUtil.getHttpApi;
-import static net.mikoto.pixiv.api.util.RsaUtil.getPublicKey;
-import static net.mikoto.pixiv.api.util.RsaUtil.verify;
-import static net.mikoto.pixiv.api.util.Sha256Util.getSha256;
 
 /**
  * @author mikoto
@@ -32,7 +31,7 @@ import static net.mikoto.pixiv.api.util.Sha256Util.getSha256;
  */
 @Component("databaseConnector")
 public class SimpleDatabaseConnector implements DatabaseConnector {
-    private static final int SUCCESS_CODE = 400;
+    private static final int SUCCESS_CODE = 200;
     private static final String SUCCESS_KEY = "success";
     private static final String BODY = "body";
     private static final String SIGN = "sign";
@@ -55,7 +54,7 @@ public class SimpleDatabaseConnector implements DatabaseConnector {
 
     @Override
     public Artwork getArtworkById(int artworkId) throws GetArtworkException, IOException, InvalidKeySpecException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, WrongSignException {
-        return getArtwork(DEFAULT_DATABASE_ADDRESS, DEFAULT_DATABASE_PUBLIC_KEY, artworkId);
+        return getArtwork(DEFAULT_DATABASE_ADDRESS, artworkId);
     }
 
     /**
@@ -85,12 +84,41 @@ public class SimpleDatabaseConnector implements DatabaseConnector {
     }
 
     @Override
-    public Artwork[] getArtworks(String credential, Sort.Direction order, String properties, int pageCount) {
-        return new Artwork[0];
+    public Artwork[] getArtworks(String address, String credential, Sort.Direction order, String properties, int pageCount) throws IOException, GetArtworkException, WrongSignException, InvalidKeySpecException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
+        Artwork[] artworks;
+        Request artworksRequest = new Request.Builder()
+                .url(
+                        address + getHttpApi(
+                                GetArtworks.class,
+                                PARAM_CREDENTIAL + credential,
+                                PARAM_ORDER + order,
+                                PARAM_PROPERTIES + properties,
+                                PARAM_PAGE_COUNT + pageCount
+                        )
+                )
+                .get()
+                .build();
+        Response artworkResponse = OK_HTTP_CLIENT.newCall(artworksRequest).execute();
+        if (artworkResponse.code() == SUCCESS_CODE) {
+            JSONObject jsonObject = JSON.parseObject(Objects.requireNonNull(artworkResponse.body()).string());
+            artworkResponse.close();
+            if (jsonObject != null) {
+                if (jsonObject.getBoolean(SUCCESS_KEY)) {
+                    artworks = jsonObject.getJSONArray(BODY).toJavaList(Artwork.class).toArray(new Artwork[0]);
+                } else {
+                    throw new GetArtworkException(jsonObject.getString("message"));
+                }
+            } else {
+                throw new GetArtworkException("The json object is null!");
+            }
+        } else {
+            throw new GetArtworkException(String.valueOf(artworkResponse.code()));
+        }
+        return artworks;
     }
 
     @Override
-    public Artwork getArtwork(String address, String publicKey, int artworkId) throws GetArtworkException, IOException, InvalidKeySpecException, NoSuchAlgorithmException, WrongSignException, SignatureException, InvalidKeyException {
+    public Artwork getArtwork(String address, int artworkId) throws GetArtworkException, IOException, InvalidKeySpecException, NoSuchAlgorithmException, WrongSignException, SignatureException, InvalidKeyException {
         Artwork artwork;
         Request artworkRequest = new Request.Builder()
                 .url(
@@ -107,11 +135,7 @@ public class SimpleDatabaseConnector implements DatabaseConnector {
             artworkResponse.close();
             if (jsonObject != null) {
                 if (jsonObject.getBoolean(SUCCESS_KEY)) {
-                    if (verify(getSha256(jsonObject.getJSONObject(BODY).toJSONString()), getPublicKey(publicKey), jsonObject.getString(SIGN))) {
-                        artwork = jsonObject.getObject(BODY, Artwork.class);
-                    } else {
-                        throw new WrongSignException(getSha256(jsonObject.getJSONObject(BODY).toJSONString()), publicKey, jsonObject.getString(SIGN));
-                    }
+                    artwork = jsonObject.getObject(BODY, Artwork.class);
                 } else {
                     throw new GetArtworkException(jsonObject.getString("message"));
                 }

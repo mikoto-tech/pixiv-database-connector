@@ -38,15 +38,14 @@ public interface DatabaseConnector extends ArtworkDataSource, Connector {
      * @param pageCount  The page num.
      * @return The artwork in this page.
      */
-    Artwork[] getArtworks(String credential, Sort.Direction order, String properties, int pageCount);
+    Artwork[] getArtworks(String address, String credential, Sort.Direction order, String properties, int pageCount) throws IOException, GetArtworkException, WrongSignException, InvalidKeySpecException, NoSuchAlgorithmException, SignatureException, InvalidKeyException;
 
     /**
      * Get the artwork.
      *
      * @param address   The address.
-     * @param publicKey
      * @param artworkId The artwork id.
      * @return The artwork.
      */
-    Artwork getArtwork(String address, String publicKey, int artworkId) throws GetArtworkException, IOException, InvalidKeySpecException, NoSuchAlgorithmException, WrongSignException, SignatureException, InvalidKeyException;
+    Artwork getArtwork(String address, int artworkId) throws GetArtworkException, IOException, InvalidKeySpecException, NoSuchAlgorithmException, WrongSignException, SignatureException, InvalidKeyException;
 }
