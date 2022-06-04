@@ -8,6 +8,7 @@ import net.mikoto.pixiv.api.http.database.artwork.InsertArtworks;
 import net.mikoto.pixiv.api.model.Artwork;
 import net.mikoto.pixiv.database.connector.exception.GetArtworkException;
 import okhttp3.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
@@ -33,30 +34,32 @@ public class SimpleDatabaseConnector implements DatabaseConnector {
             .retryOnConnectionFailure(true)
             .build();
     private static final MediaType MEDIA_TYPE = MediaType.parse("text/plain");
-    private final String DEFAULT_DATABASE_ADDRESS;
-
-    public SimpleDatabaseConnector(String defaultDatabaseAddress) {
-        DEFAULT_DATABASE_ADDRESS = defaultDatabaseAddress;
-    }
-
-    public SimpleDatabaseConnector() {
-        DEFAULT_DATABASE_ADDRESS = "";
-    }
+    @Value("${mikoto.pixiv.patcher.storage.database.address}")
+    private String defaultDatabaseAddress;
+    @Value("${mikoto.pixiv.patcher.storage.database.key}")
+    private String defaultDatabaseKey;
 
     @Override
     public Artwork getArtworkById(int artworkId) throws GetArtworkException, IOException {
-        return getArtwork(DEFAULT_DATABASE_ADDRESS, artworkId);
+        return getArtwork(defaultDatabaseAddress, artworkId);
     }
 
     /**
      * Insert artworks.
      *
-     * @param key      The key.
      * @param address  The address of pixiv-database.
+     * @param key      The key.
      * @param artworks The artworks.
      */
     @Override
-    public void insertArtworks(String key, String address, Artwork[] artworks) throws IOException {
+    public void insertArtworks(String address, String key, Artwork[] artworks) throws IOException {
+        if (address == null) {
+            address = defaultDatabaseAddress;
+        }
+        if (key == null) {
+            key = defaultDatabaseKey;
+        }
+
         JSONObject jsonObject = new JSONObject();
         jsonObject.fluentPut("key", key);
         jsonObject.fluentPut("body", artworks);
@@ -76,6 +79,10 @@ public class SimpleDatabaseConnector implements DatabaseConnector {
 
     @Override
     public Artwork[] getArtworks(String address, String credential, Sort.Direction order, String properties, int pageCount) throws IOException, GetArtworkException {
+        if (address == null) {
+            address = defaultDatabaseAddress;
+        }
+
         Artwork[] artworks;
         Request artworksRequest = new Request.Builder()
                 .url(
@@ -95,7 +102,7 @@ public class SimpleDatabaseConnector implements DatabaseConnector {
             artworkResponse.close();
             if (jsonObject != null) {
                 if (jsonObject.getBoolean(SUCCESS_KEY)) {
-                    artworks = jsonObject.getJSONArray(BODY).toJavaList(Artwork.class).toArray(new Artwork[0]);
+                    artworks = jsonObject.getJSONArray(BODY).toList(Artwork.class).toArray(new Artwork[0]);
                 } else {
                     throw new GetArtworkException(jsonObject.getString("message"));
                 }
@@ -110,6 +117,10 @@ public class SimpleDatabaseConnector implements DatabaseConnector {
 
     @Override
     public Artwork getArtwork(String address, int artworkId) throws GetArtworkException, IOException {
+        if (address == null) {
+            address = defaultDatabaseAddress;
+        }
+
         Artwork artwork;
         Request artworkRequest = new Request.Builder()
                 .url(

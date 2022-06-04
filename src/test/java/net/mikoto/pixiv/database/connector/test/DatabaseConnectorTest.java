@@ -23,6 +23,6 @@ public class DatabaseConnectorTest {
 
         DatabaseConnector databaseConnector = new SimpleDatabaseConnector();
 
-        databaseConnector.insertArtworks("MikotoTestAccessKey", "http://127.0.0.1:2465", new Artwork[]{artwork1, artwork2});
+        databaseConnector.insertArtworks("http://127.0.0.1:2465", "MikotoTestAccessKey", new Artwork[]{artwork1, artwork2});
     }
 }

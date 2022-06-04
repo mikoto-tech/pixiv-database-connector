@@ -16,12 +16,12 @@ public interface DatabaseConnector extends ArtworkDataSource, Connector {
     /**
      * Insert artworks.
      *
-     * @param key      The key.
      * @param address  The address of pixiv-database.
+     * @param key      The key.
      * @param artworks The artworks.
      * @throws IOException An exception.
      */
-    void insertArtworks(String key, String address, Artwork[] artworks) throws IOException;
+    void insertArtworks(String address, String key, Artwork[] artworks) throws IOException;
 
 
     /**
