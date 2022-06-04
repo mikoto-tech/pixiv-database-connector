@@ -7,17 +7,12 @@ import net.mikoto.pixiv.api.http.database.artwork.GetArtworks;
 import net.mikoto.pixiv.api.http.database.artwork.InsertArtworks;
 import net.mikoto.pixiv.api.model.Artwork;
 import net.mikoto.pixiv.database.connector.exception.GetArtworkException;
-import net.mikoto.pixiv.database.connector.exception.WrongSignException;
 import okhttp3.*;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
 import java.util.Objects;
 
@@ -34,26 +29,22 @@ public class SimpleDatabaseConnector implements DatabaseConnector {
     private static final int SUCCESS_CODE = 200;
     private static final String SUCCESS_KEY = "success";
     private static final String BODY = "body";
-    private static final String SIGN = "sign";
     private static final OkHttpClient OK_HTTP_CLIENT = new OkHttpClient.Builder()
             .retryOnConnectionFailure(true)
             .build();
     private static final MediaType MEDIA_TYPE = MediaType.parse("text/plain");
     private final String DEFAULT_DATABASE_ADDRESS;
-    private final String DEFAULT_DATABASE_PUBLIC_KEY;
 
-    public SimpleDatabaseConnector(String defaultDatabaseAddress, String defaultDatabasePublicKey) {
+    public SimpleDatabaseConnector(String defaultDatabaseAddress) {
         DEFAULT_DATABASE_ADDRESS = defaultDatabaseAddress;
-        DEFAULT_DATABASE_PUBLIC_KEY = defaultDatabasePublicKey;
     }
 
     public SimpleDatabaseConnector() {
         DEFAULT_DATABASE_ADDRESS = "";
-        DEFAULT_DATABASE_PUBLIC_KEY = "";
     }
 
     @Override
-    public Artwork getArtworkById(int artworkId) throws GetArtworkException, IOException, InvalidKeySpecException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, WrongSignException {
+    public Artwork getArtworkById(int artworkId) throws GetArtworkException, IOException {
         return getArtwork(DEFAULT_DATABASE_ADDRESS, artworkId);
     }
 
@@ -84,7 +75,7 @@ public class SimpleDatabaseConnector implements DatabaseConnector {
     }
 
     @Override
-    public Artwork[] getArtworks(String address, String credential, Sort.Direction order, String properties, int pageCount) throws IOException, GetArtworkException, WrongSignException, InvalidKeySpecException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
+    public Artwork[] getArtworks(String address, String credential, Sort.Direction order, String properties, int pageCount) throws IOException, GetArtworkException {
         Artwork[] artworks;
         Request artworksRequest = new Request.Builder()
                 .url(
@@ -118,7 +109,7 @@ public class SimpleDatabaseConnector implements DatabaseConnector {
     }
 
     @Override
-    public Artwork getArtwork(String address, int artworkId) throws GetArtworkException, IOException, InvalidKeySpecException, NoSuchAlgorithmException, WrongSignException, SignatureException, InvalidKeyException {
+    public Artwork getArtwork(String address, int artworkId) throws GetArtworkException, IOException {
         Artwork artwork;
         Request artworkRequest = new Request.Builder()
                 .url(

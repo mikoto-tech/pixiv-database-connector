@@ -4,14 +4,9 @@ import net.mikoto.pixiv.api.connector.ArtworkDataSource;
 import net.mikoto.pixiv.api.connector.Connector;
 import net.mikoto.pixiv.api.model.Artwork;
 import net.mikoto.pixiv.database.connector.exception.GetArtworkException;
-import net.mikoto.pixiv.database.connector.exception.WrongSignException;
 import org.springframework.data.domain.Sort;
 
 import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
-import java.security.spec.InvalidKeySpecException;
 
 /**
  * @author mikoto
@@ -37,8 +32,10 @@ public interface DatabaseConnector extends ArtworkDataSource, Connector {
      * @param properties The properties that need to sort.
      * @param pageCount  The page num.
      * @return The artwork in this page.
+     * @throws GetArtworkException An exception.
+     * @throws IOException         An exception.
      */
-    Artwork[] getArtworks(String address, String credential, Sort.Direction order, String properties, int pageCount) throws IOException, GetArtworkException, WrongSignException, InvalidKeySpecException, NoSuchAlgorithmException, SignatureException, InvalidKeyException;
+    Artwork[] getArtworks(String address, String credential, Sort.Direction order, String properties, int pageCount) throws IOException, GetArtworkException;
 
     /**
      * Get the artwork.
@@ -46,6 +43,8 @@ public interface DatabaseConnector extends ArtworkDataSource, Connector {
      * @param address   The address.
      * @param artworkId The artwork id.
      * @return The artwork.
+     * @throws GetArtworkException An exception.
+     * @throws IOException         An exception.
      */
-    Artwork getArtwork(String address, int artworkId) throws GetArtworkException, IOException, InvalidKeySpecException, NoSuchAlgorithmException, WrongSignException, SignatureException, InvalidKeyException;
+    Artwork getArtwork(String address, int artworkId) throws GetArtworkException, IOException;
 }
